@@ -8,6 +8,8 @@ from chatbot import Memory, generate_response, analyze_sentiment
 import csv
 import os
 import datetime
+import json
+from collections import Counter
 
 app = Flask(__name__)
 
@@ -72,6 +74,61 @@ def chat():
         "response": bot_response,
         "sentiment": sentiment
     })
+
+
+@app.route("/dashboard")
+def dashboard():
+    """Render the live analytics dashboard."""
+    rows = []
+    if os.path.exists(LOG_FILE):
+        with open(LOG_FILE, "r", encoding="utf-8") as f:
+            reader = csv.DictReader(f)
+            rows = [r for r in reader if r.get("sentiment")]
+
+    total = len(rows)
+
+    # Sentiment counts
+    sentiments = [r["sentiment"] for r in rows]
+    counts = Counter(sentiments)
+    sentiment_data = {
+        "positive": counts.get("positive", 0),
+        "negative": counts.get("negative", 0),
+        "neutral":  counts.get("neutral",  0),
+        "crisis":   counts.get("crisis",   0),
+    }
+
+    # Sentiment over time (group by date)
+    daily = {}
+    for r in rows:
+        try:
+            date = r["timestamp"][:10]  # YYYY-MM-DD
+            if date not in daily:
+                daily[date] = {"positive": 0, "negative": 0, "neutral": 0, "crisis": 0}
+            daily[date][r["sentiment"]] = daily[date].get(r["sentiment"], 0) + 1
+        except Exception:
+            pass
+
+    timeline_labels = sorted(daily.keys())
+    timeline_data = {
+        "positive": [daily[d].get("positive", 0) for d in timeline_labels],
+        "negative": [daily[d].get("negative", 0) for d in timeline_labels],
+        "neutral":  [daily[d].get("neutral",  0) for d in timeline_labels],
+        "crisis":   [daily[d].get("crisis",   0) for d in timeline_labels],
+    }
+
+    # Recent messages (last 10)
+    recent = rows[-10:][::-1]
+
+    most_common = max(sentiment_data, key=sentiment_data.get) if total > 0 else "—"
+
+    return render_template("dashboard.html",
+        total=total,
+        sentiment_data=json.dumps(sentiment_data),
+        timeline_labels=json.dumps(timeline_labels),
+        timeline_data=json.dumps(timeline_data),
+        recent=recent,
+        most_common=most_common,
+    )
 
 
 # ─────────────────────────────────────────────
