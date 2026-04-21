@@ -2,3 +2,4 @@ flask
 textblob
 pandas
 matplotlib
+gunicorn
