@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>MindEase · AI Mental Health Companion</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,300;0,400;0,600;1,300&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+
+  <!-- ── AMBIENT BACKGROUND ── -->
+  <div class="bg-orbs">
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
+  </div>
+
+  <!-- ── MAIN LAYOUT ── -->
+  <main class="app-shell">
+
+    <!-- LEFT PANEL -->
+    <aside class="sidebar">
+      <div class="brand">
+        <span class="brand-icon">🧠</span>
+        <div>
+          <h1 class="brand-name">MindEase</h1>
+          <p class="brand-sub">AI Mental Health Companion</p>
+        </div>
+      </div>
+
+      <!-- Motivational Quote Rotator -->
+      <div class="quote-card">
+        <div class="quote-icon">"</div>
+        <p class="quote-text" id="quoteText">Loading inspiration…</p>
+        <div class="quote-dots">
+          <span class="dot active" id="dot-0"></span>
+          <span class="dot" id="dot-1"></span>
+          <span class="dot" id="dot-2"></span>
+          <span class="dot" id="dot-3"></span>
+          <span class="dot" id="dot-4"></span>
+        </div>
+      </div>
+
+      <!-- Mood tracker -->
+      <div class="mood-panel">
+        <p class="mood-label">How are you feeling?</p>
+        <div class="mood-grid">
+          <button class="mood-btn" data-mood="😊 I'm feeling great today!" title="Happy">😊</button>
+          <button class="mood-btn" data-mood="😢 I'm feeling sad right now." title="Sad">😢</button>
+          <button class="mood-btn" data-mood="😡 I'm feeling really frustrated." title="Angry">😡</button>
+          <button class="mood-btn" data-mood="😰 I'm feeling anxious." title="Anxious">😰</button>
+          <button class="mood-btn" data-mood="😴 I'm exhausted and drained." title="Tired">😴</button>
+          <button class="mood-btn" data-mood="❤️ I'm feeling loved and grateful." title="Loved">❤️</button>
+        </div>
+      </div>
+
+      <!-- Quick prompts -->
+      <div class="quick-prompts">
+        <p class="mood-label">Quick starters</p>
+        <button class="prompt-chip" data-prompt="I've been feeling stressed at work lately.">Work stress</button>
+        <button class="prompt-chip" data-prompt="I feel lonely and disconnected from people.">Loneliness</button>
+        <button class="prompt-chip" data-prompt="My anxiety has been really bad today.">Anxiety</button>
+        <button class="prompt-chip" data-prompt="I just need someone to talk to right now.">Just talk</button>
+      </div>
+
+      <!-- Crisis Banner -->
+      <div class="crisis-banner">
+        <span>🆘</span>
+        <div>
+          <strong>In crisis?</strong>
+          <p>iCall: <a href="tel:9152987821">9152987821</a><br>Vandrevala: <a href="tel:18602662345">1860-2662-345</a></p>
+        </div>
+      </div>
+    </aside>
+
+    <!-- CHAT PANEL -->
+    <section class="chat-panel">
+      <header class="chat-header">
+        <div class="chat-avatar">🌿</div>
+        <div>
+          <h2 class="chat-title">Your Safe Space</h2>
+          <p class="chat-status"><span class="status-dot"></span> Always here for you</p>
+        </div>
+        <button class="clear-btn" id="clearBtn" title="Clear chat">↺ Reset</button>
+      </header>
+
+      <!-- Messages -->
+      <div class="messages-wrap" id="messagesWrap">
+        <!-- Welcome message injected by JS -->
+      </div>
+
+      <!-- Sentiment badge -->
+      <div class="sentiment-bar" id="sentimentBar" style="display:none;">
+        <span id="sentimentLabel">Detected: —</span>
+      </div>
+
+      <!-- Input area -->
+      <footer class="input-area">
+        <div class="emoji-row">
+          <button class="emoji-btn" data-emoji="😊">😊</button>
+          <button class="emoji-btn" data-emoji="😢">😢</button>
+          <button class="emoji-btn" data-emoji="😡">😡</button>
+          <button class="emoji-btn" data-emoji="❤️">❤️</button>
+          <span class="emoji-hint">tap to express</span>
+        </div>
+        <div class="input-row">
+          <textarea
+            id="userInput"
+            class="msg-input"
+            placeholder="Share what's on your mind…"
+            rows="1"
+            maxlength="500"
+          ></textarea>
+          <button class="send-btn" id="sendBtn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <line x1="22" y1="2" x2="11" y2="13"/>
+              <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+            </svg>
+          </button>
+        </div>
+      </footer>
+    </section>
+
+  </main>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>
