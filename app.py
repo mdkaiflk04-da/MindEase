@@ -23,10 +23,16 @@ LOG_FILE = "chat_log.csv"
 
 def init_csv():
     """Create CSV with headers if it doesn't exist."""
-    if not os.path.exists(LOG_FILE):
-        with open(LOG_FILE, "w", newline="", encoding="utf-8") as f:
-            writer = csv.writer(f)
-            writer.writerow(["message", "sentiment", "timestamp"])
+    try:
+        if not os.path.exists(LOG_FILE):
+            with open(LOG_FILE, "w", newline="", encoding="utf-8") as f:
+                writer = csv.writer(f)
+                writer.writerow(["message", "sentiment", "timestamp"])
+    except Exception:
+        pass
+
+# Run at startup regardless of whether using flask or gunicorn
+init_csv()
 
 def log_message(message: str, sentiment: str):
     """Append a chat message to the CSV log."""
@@ -80,10 +86,13 @@ def chat():
 def dashboard():
     """Render the live analytics dashboard."""
     rows = []
-    if os.path.exists(LOG_FILE):
-        with open(LOG_FILE, "r", encoding="utf-8") as f:
-            reader = csv.DictReader(f)
-            rows = [r for r in reader if r.get("sentiment")]
+    try:
+        if os.path.exists(LOG_FILE):
+            with open(LOG_FILE, "r", encoding="utf-8") as f:
+                reader = csv.DictReader(f)
+                rows = [r for r in reader if r.get("sentiment")]
+    except Exception:
+        rows = []
 
     total = len(rows)
 
