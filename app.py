@@ -1,148 +1,175 @@
 """
-app.py - Flask application entry point
-Routes: / (index), /chat (POST API)
+app.py - Flask app with Gemini AI integration
+Routes: / (chat), /dashboard, /chat (POST), /clear (POST)
 """
 
-from flask import Flask, render_template, request, jsonify
-from chatbot import Memory, generate_response, analyze_sentiment
-import csv
-import os
-import datetime
-import json
+from flask import Flask, render_template, request, jsonify, session
+from chatbot import analyze_sentiment, analyze_conversation_sentiment
+import csv, os, datetime, json, requests
 from collections import Counter
 
 app = Flask(__name__)
+app.secret_key = os.environ.get("SECRET_KEY", "mindease-secret-2024")
 
-# Global memory instance (single-user session)
-memory = Memory()
+# ── CONFIG ────────────────────────────────────
+GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "AIzaSyBN0UcMl3ji1waUAQ-7W9hZjT_Cog5gbLg")
+GEMINI_URL = (
+    "https://generativelanguage.googleapis.com/v1beta/models/"
+    "gemini-2.0-flash:generateContent?key=" + GEMINI_API_KEY
+)
 
-# ─────────────────────────────────────────────
-#  CSV LOGGING SETUP
-# ─────────────────────────────────────────────
 LOG_FILE = "chat_log.csv"
 
+SYSTEM_PROMPT = """You are MindEase, a warm, empathetic AI mental health companion.
+
+Your role:
+- Listen deeply and respond with genuine empathy and care
+- Ask thoughtful follow-up questions to understand the person better
+- Offer supportive, non-judgmental responses
+- Use gentle, human language — never clinical or robotic
+- Keep responses concise (2-4 sentences usually) unless more depth is needed
+- Use emojis sparingly and only when they feel natural
+- Remember context from earlier in the conversation
+
+If someone expresses crisis, suicidal thoughts, or severe distress:
+- Respond with immediate warmth and care
+- Gently encourage them to reach out to a trusted person or professional
+- Share crisis resources: iCall India: 9152987821, Vandrevala Foundation: 1860-2662-345
+- Never dismiss or minimize their feelings
+
+Never:
+- Give medical diagnoses
+- Pretend to be a licensed therapist
+- Use generic, copy-paste responses
+- Be preachy or lecture the person"""
+
+# ── CSV SETUP ─────────────────────────────────
 def init_csv():
-    """Create CSV with headers if it doesn't exist."""
     try:
         if not os.path.exists(LOG_FILE):
             with open(LOG_FILE, "w", newline="", encoding="utf-8") as f:
-                writer = csv.writer(f)
-                writer.writerow(["message", "sentiment", "timestamp"])
+                csv.writer(f).writerow(["message", "sentiment", "timestamp"])
     except Exception:
         pass
 
-# Run at startup regardless of whether using flask or gunicorn
+def log_message(message: str, sentiment: str):
+    try:
+        with open(LOG_FILE, "a", newline="", encoding="utf-8") as f:
+            csv.writer(f).writerow([
+                message, sentiment,
+                datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            ])
+    except Exception:
+        pass
+
 init_csv()
 
-def log_message(message: str, sentiment: str):
-    """Append a chat message to the CSV log."""
-    with open(LOG_FILE, "a", newline="", encoding="utf-8") as f:
-        writer = csv.writer(f)
-        writer.writerow([message, sentiment, datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")])
+# ── GEMINI CALL ───────────────────────────────
+def call_gemini(history: list) -> str:
+    """Send conversation history to Gemini and return response text."""
+    payload = {
+        "system_instruction": {"parts": [{"text": SYSTEM_PROMPT}]},
+        "contents": history,
+        "generationConfig": {
+            "temperature": 0.85,
+            "maxOutputTokens": 300,
+        }
+    }
+    try:
+        resp = requests.post(GEMINI_URL, json=payload, timeout=15)
+        data = resp.json()
+        return data["candidates"][0]["content"]["parts"][0]["text"].strip()
+    except Exception as e:
+        return "I'm having a little trouble connecting right now. Please try again in a moment. 💙"
 
+# ── SESSION HISTORY ───────────────────────────
+def get_history():
+    return session.get("history", [])
 
-# ─────────────────────────────────────────────
-#  ROUTES
-# ─────────────────────────────────────────────
+def save_history(history):
+    # Keep last 20 turns to stay within token limits
+    session["history"] = history[-40:]
+
+# ── ROUTES ────────────────────────────────────
 @app.route("/")
 def index():
-    """Render the main chat interface."""
+    if "history" not in session:
+        session["history"] = []
     return render_template("index.html")
-
 
 @app.route("/chat", methods=["POST"])
 def chat():
-    """
-    POST /chat
-    Expects JSON: {"message": "..."}
-    Returns JSON: {"response": "...", "sentiment": "..."}
-    """
     data = request.get_json()
-
-    if not data or "message" not in data:
-        return jsonify({"error": "No message provided"}), 400
-
-    user_message = data["message"].strip()
-
-    if not user_message:
+    if not data or not data.get("message", "").strip():
         return jsonify({"error": "Empty message"}), 400
 
-    # Analyze sentiment
-    sentiment = analyze_sentiment(user_message)
+    user_message = data["message"].strip()
+    history = get_history()
 
-    # Generate bot response
-    bot_response = generate_response(user_message, memory)
+    # Add user message to history
+    history.append({"role": "user", "parts": [{"text": user_message}]})
+
+    # Get Gemini response
+    bot_response = call_gemini(history)
+
+    # Add bot response to history
+    history.append({"role": "model", "parts": [{"text": bot_response}]})
+    save_history(history)
+
+    # Analyze sentiment across full conversation
+    overall_sentiment = analyze_conversation_sentiment(history)
+    msg_sentiment     = analyze_sentiment(user_message)
 
     # Log to CSV
-    log_message(user_message, sentiment)
+    log_message(user_message, msg_sentiment)
 
     return jsonify({
         "response": bot_response,
-        "sentiment": sentiment
+        "sentiment": msg_sentiment,
+        "overall_sentiment": overall_sentiment,
     })
 
+@app.route("/clear", methods=["POST"])
+def clear():
+    session["history"] = []
+    return jsonify({"status": "ok"})
 
 @app.route("/dashboard")
 def dashboard():
-    """Render the live analytics dashboard."""
     rows = []
     try:
         if os.path.exists(LOG_FILE):
             with open(LOG_FILE, "r", encoding="utf-8") as f:
-                reader = csv.DictReader(f)
-                rows = [r for r in reader if r.get("sentiment")]
+                rows = [r for r in csv.DictReader(f) if r.get("sentiment")]
     except Exception:
         rows = []
 
-    total = len(rows)
+    total  = len(rows)
+    counts = Counter(r["sentiment"] for r in rows)
+    sentiment_data = {k: counts.get(k, 0) for k in ["positive","negative","neutral","crisis"]}
 
-    # Sentiment counts
-    sentiments = [r["sentiment"] for r in rows]
-    counts = Counter(sentiments)
-    sentiment_data = {
-        "positive": counts.get("positive", 0),
-        "negative": counts.get("negative", 0),
-        "neutral":  counts.get("neutral",  0),
-        "crisis":   counts.get("crisis",   0),
-    }
-
-    # Sentiment over time (group by date)
     daily = {}
     for r in rows:
         try:
-            date = r["timestamp"][:10]  # YYYY-MM-DD
-            if date not in daily:
-                daily[date] = {"positive": 0, "negative": 0, "neutral": 0, "crisis": 0}
+            date = r["timestamp"][:10]
+            daily.setdefault(date, {"positive":0,"negative":0,"neutral":0,"crisis":0})
             daily[date][r["sentiment"]] = daily[date].get(r["sentiment"], 0) + 1
         except Exception:
             pass
 
-    timeline_labels = sorted(daily.keys())
-    timeline_data = {
-        "positive": [daily[d].get("positive", 0) for d in timeline_labels],
-        "negative": [daily[d].get("negative", 0) for d in timeline_labels],
-        "neutral":  [daily[d].get("neutral",  0) for d in timeline_labels],
-        "crisis":   [daily[d].get("crisis",   0) for d in timeline_labels],
-    }
-
-    # Recent messages (last 10)
-    recent = rows[-10:][::-1]
-
-    most_common = max(sentiment_data, key=sentiment_data.get) if total > 0 else "—"
+    labels = sorted(daily.keys())
+    timeline_data = {k: [daily[d].get(k,0) for d in labels]
+                     for k in ["positive","negative","neutral","crisis"]}
+    most_common = max(sentiment_data, key=sentiment_data.get) if total else "—"
 
     return render_template("dashboard.html",
         total=total,
         sentiment_data=json.dumps(sentiment_data),
-        timeline_labels=json.dumps(timeline_labels),
+        timeline_labels=json.dumps(labels),
         timeline_data=json.dumps(timeline_data),
-        recent=recent,
+        recent=rows[-10:][::-1],
         most_common=most_common,
     )
 
-
-# ─────────────────────────────────────────────
-#  ENTRY POINT
-# ─────────────────────────────────────────────
 if __name__ == "__main__":
-    init_csv()
-    app.run(debug=True, port=5000)
+    app.run(debug=False, port=5000)

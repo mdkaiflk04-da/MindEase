@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>MindEase</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/style.css"/>
+</head>
+<body>
+  <div class="layout">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-inner">
+        <div class="brand">
+          <span class="brand-dot"></span>
+          <span class="brand-name">MindEase</span>
+        </div>
+
+        <nav class="side-nav">
+          <a href="/" class="nav-item active">Chat</a>
+          <a href="/dashboard" class="nav-item">Dashboard</a>
+        </nav>
+
+        <div class="quote-block">
+          <p class="quote-text" id="quoteText"></p>
+        </div>
+
+        <div class="mood-section">
+          <p class="section-label">How are you feeling?</p>
+          <div class="mood-row">
+            <button class="mood-pill" data-msg="I'm feeling happy today 😊">Happy</button>
+            <button class="mood-pill" data-msg="I'm feeling sad right now 😢">Sad</button>
+            <button class="mood-pill" data-msg="I'm feeling anxious 😰">Anxious</button>
+            <button class="mood-pill" data-msg="I'm feeling angry 😡">Angry</button>
+            <button class="mood-pill" data-msg="I'm exhausted and drained 😴">Tired</button>
+            <button class="mood-pill" data-msg="I'm feeling lonely 💙">Lonely</button>
+          </div>
+        </div>
+
+        <div class="crisis-block">
+          <p class="crisis-label">Need immediate help?</p>
+          <p class="crisis-line">iCall <span>9152987821</span></p>
+          <p class="crisis-line">Vandrevala <span>1860-2662-345</span></p>
+        </div>
+      </div>
+    </aside>
+
+    <!-- CHAT -->
+    <main class="chat-main">
+      <header class="chat-header">
+        <button class="menu-btn" id="menuBtn">
+          <span></span><span></span><span></span>
+        </button>
+        <div class="header-center">
+          <span class="header-title">MindEase</span>
+          <span class="header-status" id="headerStatus">
+            <span class="status-dot"></span> Ready
+          </span>
+        </div>
+        <button class="clear-btn" id="clearBtn" title="New conversation">↺</button>
+      </header>
+
+      <div class="messages" id="messages">
+        <div class="welcome">
+          <div class="welcome-icon">🌿</div>
+          <h2>Hello, I'm MindEase</h2>
+          <p>A safe space to share what's on your mind. I'm here to listen.</p>
+        </div>
+      </div>
+
+      <!-- Sentiment bar -->
+      <div class="sentiment-strip" id="sentimentStrip" style="display:none">
+        <span class="sentiment-label" id="sentimentLabel"></span>
+        <span class="sentiment-overall" id="sentimentOverall"></span>
+      </div>
+
+      <footer class="input-footer">
+        <div class="emoji-strip">
+          <button class="emoji-pill" data-e="😊">😊</button>
+          <button class="emoji-pill" data-e="😢">😢</button>
+          <button class="emoji-pill" data-e="😡">😡</button>
+          <button class="emoji-pill" data-e="❤️">❤️</button>
+        </div>
+        <div class="input-row">
+          <textarea id="userInput" class="input-box" placeholder="Share what's on your mind…" rows="1" maxlength="1000"></textarea>
+          <button class="send-btn" id="sendBtn">
+            <svg viewBox="0 0 20 20" fill="currentColor"><path d="M3.105 3.105a.75.75 0 0 1 .958-.097l13.5 8.25a.75.75 0 0 1 0 1.284l-13.5 8.25a.75.75 0 0 1-1.105-.66V3.868a.75.75 0 0 1 .147-.763z"/></svg>
+          </button>
+        </div>
+      </footer>
+    </main>
+  </div>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>
