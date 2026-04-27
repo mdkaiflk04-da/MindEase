@@ -1,85 +1,66 @@
-/* ═══════════════════════════════════════════
-   MindEase · Frontend JavaScript
-   ═══════════════════════════════════════════ */
+/* MindEase · Frontend JS */
 
-// ─────────────────────────────────────────────
-//  MOTIVATIONAL QUOTES
-// ─────────────────────────────────────────────
+// ── QUOTES ───────────────────────────────────
 const QUOTES = [
-  "You don't have to control your thoughts. You just have to stop letting them control you.",
-  "Even the darkest night will end and the sun will rise. — Victor Hugo",
-  "You are allowed to be both a masterpiece and a work in progress simultaneously.",
-  "Be gentle with yourself. You are a child of the universe, no less than the trees.",
-  "There is hope, even when your brain tells you there isn't. — John Green",
-  "Healing is not linear. Every step forward matters, no matter how small.",
-  "You are worthy of the love you keep trying to give everyone else.",
+  "You don't have to control your thoughts. Just stop letting them control you.",
+  "Even the darkest night will end and the sun will rise.",
+  "You are allowed to be both a masterpiece and a work in progress.",
+  "Healing is not linear. Every small step matters.",
+  "You are worthy of the love you keep giving to others.",
   "The bravest thing you can do is keep going when everything feels hard.",
-  "Your mental health is a priority. Your happiness is an essential.",
-  "Sometimes the most important thing in a whole day is the rest we take.",
+  "Rest is not weakness. It is part of the work.",
+  "Your feelings are valid. All of them.",
+  "Sometimes the most productive thing is to rest.",
+  "Be gentle with yourself. You are doing the best you can.",
 ];
-
-let quoteIndex = 0;
-
-function rotateQuote() {
-  const el = document.getElementById("quoteText");
-  if (!el) return;
-
-  el.style.opacity = "0";
-  setTimeout(() => {
-    quoteIndex = (quoteIndex + 1) % QUOTES.length;
-    el.textContent = QUOTES[quoteIndex];
-    el.style.opacity = "1";
-    // Update dots
-    document.querySelectorAll(".dot").forEach((d, i) => {
-      d.classList.toggle("active", i === quoteIndex % 5);
-    });
-  }, 400);
+let qIdx = 0;
+const qEl = document.getElementById("quoteText");
+function showQuote() {
+  if (!qEl) return;
+  qEl.style.opacity = "0";
+  setTimeout(() => { qEl.textContent = QUOTES[qIdx++ % QUOTES.length]; qEl.style.opacity = "1"; }, 400);
 }
+showQuote();
+setInterval(showQuote, 6000);
 
-function initQuotes() {
-  const el = document.getElementById("quoteText");
-  if (el) el.textContent = QUOTES[0];
-  setInterval(rotateQuote, 5000);
-}
-
-
-// ─────────────────────────────────────────────
-//  DOM REFERENCES
-// ─────────────────────────────────────────────
-const messagesWrap  = document.getElementById("messagesWrap");
+// ── DOM REFS ──────────────────────────────────
+const messagesEl    = document.getElementById("messages");
 const userInput     = document.getElementById("userInput");
 const sendBtn       = document.getElementById("sendBtn");
-const sentimentBar  = document.getElementById("sentimentBar");
-const sentimentLabel = document.getElementById("sentimentLabel");
 const clearBtn      = document.getElementById("clearBtn");
+const menuBtn       = document.getElementById("menuBtn");
+const sidebar       = document.getElementById("sidebar");
+const sentimentStrip = document.getElementById("sentimentStrip");
+const sentimentLabel = document.getElementById("sentimentLabel");
+const sentimentOverall = document.getElementById("sentimentOverall");
+const headerStatus  = document.getElementById("headerStatus");
 
+// ── SIDEBAR TOGGLE (mobile) ───────────────────
+menuBtn?.addEventListener("click", () => sidebar.classList.toggle("open"));
+document.addEventListener("click", (e) => {
+  if (sidebar.classList.contains("open") && !sidebar.contains(e.target) && e.target !== menuBtn) {
+    sidebar.classList.remove("open");
+  }
+});
 
-// ─────────────────────────────────────────────
-//  HELPERS
-// ─────────────────────────────────────────────
+// ── HELPERS ───────────────────────────────────
 function getTime() {
   return new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 }
-
-function scrollToBottom() {
-  messagesWrap.scrollTop = messagesWrap.scrollHeight;
+function scrollBottom() {
+  messagesEl.scrollTop = messagesEl.scrollHeight;
+}
+function setStatus(text, color = "#4CAF50") {
+  if (!headerStatus) return;
+  headerStatus.innerHTML = `<span class="status-dot" style="background:${color}"></span> ${text}`;
 }
 
-function setSendEnabled(state) {
-  sendBtn.disabled = !state;
-}
-
-// Auto-resize textarea
-userInput.addEventListener("input", () => {
-  userInput.style.height = "auto";
-  userInput.style.height = Math.min(userInput.scrollHeight, 120) + "px";
-});
-
-
-// ─────────────────────────────────────────────
-//  RENDER MESSAGES
-// ─────────────────────────────────────────────
+// ── RENDER MESSAGE ────────────────────────────
 function appendMessage(role, text) {
+  // Remove welcome block on first message
+  const welcome = messagesEl.querySelector(".welcome");
+  if (welcome) welcome.remove();
+
   const row = document.createElement("div");
   row.classList.add("msg-row", role);
 
@@ -90,90 +71,68 @@ function appendMessage(role, text) {
   const bubble = document.createElement("div");
   bubble.classList.add("bubble");
 
-  const textEl = document.createElement("p");
-  textEl.textContent = text;
+  const p = document.createElement("p");
+  p.textContent = text;
 
-  const timeEl = document.createElement("div");
-  timeEl.classList.add("bubble-time");
-  timeEl.textContent = getTime();
+  const time = document.createElement("div");
+  time.classList.add("bubble-time");
+  time.textContent = getTime();
 
-  bubble.appendChild(textEl);
-  bubble.appendChild(timeEl);
+  bubble.appendChild(p);
+  bubble.appendChild(time);
   row.appendChild(avatar);
   row.appendChild(bubble);
-  messagesWrap.appendChild(row);
-  scrollToBottom();
+  messagesEl.appendChild(row);
+  scrollBottom();
   return row;
 }
 
-function showTypingIndicator() {
+// ── TYPING INDICATOR ──────────────────────────
+function showTyping() {
   const row = document.createElement("div");
   row.classList.add("msg-row", "bot");
   row.id = "typingRow";
-
   const avatar = document.createElement("div");
   avatar.classList.add("msg-avatar");
   avatar.textContent = "🌿";
-
   const bubble = document.createElement("div");
   bubble.classList.add("bubble");
-
-  const typing = document.createElement("div");
-  typing.classList.add("typing-bubble");
-  [0, 1, 2].forEach(() => {
-    const dot = document.createElement("div");
-    dot.classList.add("typing-dot");
-    typing.appendChild(dot);
-  });
-
-  bubble.appendChild(typing);
+  bubble.innerHTML = '<div class="typing-dots"><span></span><span></span><span></span></div>';
   row.appendChild(avatar);
   row.appendChild(bubble);
-  messagesWrap.appendChild(row);
-  scrollToBottom();
+  messagesEl.appendChild(row);
+  scrollBottom();
+}
+function removeTyping() {
+  document.getElementById("typingRow")?.remove();
 }
 
-function removeTypingIndicator() {
-  const el = document.getElementById("typingRow");
-  if (el) el.remove();
-}
-
-
-// ─────────────────────────────────────────────
-//  SENTIMENT BADGE
-// ─────────────────────────────────────────────
+// ── SENTIMENT DISPLAY ─────────────────────────
 const SENTIMENT_META = {
-  positive: { icon: "😊", label: "Positive",  cls: "badge-positive" },
-  negative: { icon: "😢", label: "Negative",  cls: "badge-negative" },
-  neutral:  { icon: "😐", label: "Neutral",   cls: "badge-neutral"  },
-  crisis:   { icon: "🚨", label: "Crisis",    cls: "badge-crisis"   },
+  positive: { icon: "😊", cls: "s-positive", label: "Positive" },
+  negative: { icon: "😢", cls: "s-negative", label: "Negative" },
+  neutral:  { icon: "😐", cls: "s-neutral",  label: "Neutral"  },
+  crisis:   { icon: "🚨", cls: "s-crisis",   label: "Crisis"   },
 };
-
-function updateSentimentBar(sentiment) {
-  const meta = SENTIMENT_META[sentiment] || SENTIMENT_META.neutral;
-  sentimentBar.style.display = "flex";
-  sentimentLabel.innerHTML = `
-    Detected sentiment: 
-    <span class="sentiment-badge ${meta.cls}">${meta.icon} ${meta.label}</span>
-  `;
+function updateSentiment(msg, overall) {
+  sentimentStrip.style.display = "flex";
+  const m = SENTIMENT_META[msg]     || SENTIMENT_META.neutral;
+  const o = SENTIMENT_META[overall] || SENTIMENT_META.neutral;
+  sentimentLabel.innerHTML   = `This message: <span class="s-badge ${m.cls}">${m.icon} ${m.label}</span>`;
+  sentimentOverall.innerHTML = `<span class="strip-divider">·</span> Overall mood: <span class="s-badge ${o.cls}">${o.icon} ${o.label}</span>`;
 }
 
-
-// ─────────────────────────────────────────────
-//  SEND MESSAGE
-// ─────────────────────────────────────────────
-async function sendMessage() {
-  const text = userInput.value.trim();
+// ── SEND MESSAGE ──────────────────────────────
+async function sendMessage(text) {
+  text = (text || userInput.value).trim();
   if (!text) return;
 
-  // Render user message
   appendMessage("user", text);
   userInput.value = "";
   userInput.style.height = "auto";
-  setSendEnabled(false);
-
-  // Show typing
-  showTypingIndicator();
+  sendBtn.disabled = true;
+  setStatus("Thinking…", "#F9A825");
+  showTyping();
 
   try {
     const res = await fetch("/chat", {
@@ -181,106 +140,73 @@ async function sendMessage() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ message: text }),
     });
-
     const data = await res.json();
 
-    // Simulate realistic typing delay (700ms–1400ms)
-    const delay = 700 + Math.random() * 700;
-    await new Promise(r => setTimeout(r, delay));
-
-    removeTypingIndicator();
+    // small delay for natural feel
+    await new Promise(r => setTimeout(r, 400));
+    removeTyping();
 
     if (data.error) {
-      appendMessage("bot", "Sorry, something went wrong. Please try again. 💙");
+      appendMessage("bot", "Something went wrong. Please try again. 💙");
     } else {
       appendMessage("bot", data.response);
-      updateSentimentBar(data.sentiment);
+      updateSentiment(data.sentiment, data.overall_sentiment);
     }
-
-  } catch (err) {
-    removeTypingIndicator();
-    appendMessage("bot", "I couldn't connect to the server. Please check if Flask is running. 🔧");
+    setStatus("Ready");
+  } catch {
+    removeTyping();
+    appendMessage("bot", "Connection issue. Is the server running? 🔧");
+    setStatus("Offline", "#F44336");
   } finally {
-    setSendEnabled(true);
+    sendBtn.disabled = false;
     userInput.focus();
   }
 }
 
+// ── EVENTS ───────────────────────────────────
+sendBtn.addEventListener("click", () => sendMessage());
 
-// ─────────────────────────────────────────────
-//  EVENT LISTENERS
-// ─────────────────────────────────────────────
-
-// Send button
-sendBtn.addEventListener("click", sendMessage);
-
-// Enter key (Shift+Enter for newline)
 userInput.addEventListener("keydown", (e) => {
-  if (e.key === "Enter" && !e.shiftKey) {
-    e.preventDefault();
-    sendMessage();
-  }
+  if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(); }
 });
 
-// Emoji buttons → append to input
-document.querySelectorAll(".emoji-btn").forEach(btn => {
+userInput.addEventListener("input", () => {
+  userInput.style.height = "auto";
+  userInput.style.height = Math.min(userInput.scrollHeight, 120) + "px";
+});
+
+// Emoji buttons
+document.querySelectorAll(".emoji-pill").forEach(btn => {
   btn.addEventListener("click", () => {
-    userInput.value += btn.dataset.emoji;
+    userInput.value += btn.dataset.e;
     userInput.focus();
   });
 });
 
-// Mood buttons → send predefined message
-document.querySelectorAll(".mood-btn").forEach(btn => {
+// Mood pills
+document.querySelectorAll(".mood-pill").forEach(btn => {
   btn.addEventListener("click", () => {
-    userInput.value = btn.dataset.mood;
-    sendMessage();
+    sidebar.classList.remove("open");
+    sendMessage(btn.dataset.msg);
   });
 });
 
-// Quick prompt chips
-document.querySelectorAll(".prompt-chip").forEach(chip => {
-  chip.addEventListener("click", () => {
-    userInput.value = chip.dataset.prompt;
-    sendMessage();
-  });
-});
-
-// Clear button → reset chat
-clearBtn.addEventListener("click", () => {
-  if (!confirm("Start a fresh conversation?")) return;
-  messagesWrap.innerHTML = "";
-  sentimentBar.style.display = "none";
-  renderWelcome();
-});
-
-
-// ─────────────────────────────────────────────
-//  WELCOME MESSAGE
-// ─────────────────────────────────────────────
-function renderWelcome() {
-  const div = document.createElement("div");
-  div.classList.add("welcome-msg");
-  div.innerHTML = `
-    <div class="welcome-icon">🌿</div>
-    <h3>Welcome to MindEase</h3>
-    <p>This is a safe, judgment-free space.<br>
-    Share how you're feeling — I'm here to listen and support you.</p>
-  `;
-  messagesWrap.appendChild(div);
-
-  // First bot message after slight delay
-  setTimeout(() => {
-    appendMessage("bot", "Hello! 💙 I'm MindEase, your AI mental health companion. I'm here to listen, support, and chat. How are you feeling today?");
-  }, 600);
-}
-
-
-// ─────────────────────────────────────────────
-//  INIT
-// ─────────────────────────────────────────────
-document.addEventListener("DOMContentLoaded", () => {
-  initQuotes();
-  renderWelcome();
+// Clear chat
+clearBtn.addEventListener("click", async () => {
+  if (!confirm("Start a new conversation?")) return;
+  await fetch("/clear", { method: "POST" });
+  messagesEl.innerHTML = "";
+  sentimentStrip.style.display = "none";
+  setStatus("Ready");
+  // Re-add welcome
+  messagesEl.innerHTML = `
+    <div class="welcome">
+      <div class="welcome-icon">🌿</div>
+      <h2>Hello, I'm MindEase</h2>
+      <p>A safe space to share what's on your mind. I'm here to listen.</p>
+    </div>`;
   userInput.focus();
 });
+
+// Focus on load
+userInput.focus();
