@@ -1,129 +1,98 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>MindEase · AI Mental Health Companion</title>
+  <title>MindEase</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,300;0,400;0,600;1,300&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/static/style.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/style.css"/>
 </head>
 <body>
+  <div class="layout">
 
-  <!-- ── AMBIENT BACKGROUND ── -->
-  <div class="bg-orbs">
-    <div class="orb orb-1"></div>
-    <div class="orb orb-2"></div>
-    <div class="orb orb-3"></div>
-  </div>
-
-  <!-- ── MAIN LAYOUT ── -->
-  <main class="app-shell">
-
-    <!-- LEFT PANEL -->
-    <aside class="sidebar">
-      <div class="brand">
-        <span class="brand-icon">🧠</span>
-        <div>
-          <h1 class="brand-name">MindEase</h1>
-          <p class="brand-sub">AI Mental Health Companion</p>
+    <!-- SIDEBAR -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-inner">
+        <div class="brand">
+          <span class="brand-dot"></span>
+          <span class="brand-name">MindEase</span>
         </div>
-      </div>
 
-      <!-- Motivational Quote Rotator -->
-      <div class="quote-card">
-        <div class="quote-icon">"</div>
-        <p class="quote-text" id="quoteText">Loading inspiration…</p>
-        <div class="quote-dots">
-          <span class="dot active" id="dot-0"></span>
-          <span class="dot" id="dot-1"></span>
-          <span class="dot" id="dot-2"></span>
-          <span class="dot" id="dot-3"></span>
-          <span class="dot" id="dot-4"></span>
+        <nav class="side-nav">
+          <a href="/" class="nav-item active">Chat</a>
+          <a href="/dashboard" class="nav-item">Dashboard</a>
+        </nav>
+
+        <div class="quote-block">
+          <p class="quote-text" id="quoteText"></p>
         </div>
-      </div>
 
-      <!-- Mood tracker -->
-      <div class="mood-panel">
-        <p class="mood-label">How are you feeling?</p>
-        <div class="mood-grid">
-          <button class="mood-btn" data-mood="😊 I'm feeling great today!" title="Happy">😊</button>
-          <button class="mood-btn" data-mood="😢 I'm feeling sad right now." title="Sad">😢</button>
-          <button class="mood-btn" data-mood="😡 I'm feeling really frustrated." title="Angry">😡</button>
-          <button class="mood-btn" data-mood="😰 I'm feeling anxious." title="Anxious">😰</button>
-          <button class="mood-btn" data-mood="😴 I'm exhausted and drained." title="Tired">😴</button>
-          <button class="mood-btn" data-mood="❤️ I'm feeling loved and grateful." title="Loved">❤️</button>
+        <div class="mood-section">
+          <p class="section-label">How are you feeling?</p>
+          <div class="mood-row">
+            <button class="mood-pill" data-msg="I'm feeling happy today 😊">Happy</button>
+            <button class="mood-pill" data-msg="I'm feeling sad right now 😢">Sad</button>
+            <button class="mood-pill" data-msg="I'm feeling anxious 😰">Anxious</button>
+            <button class="mood-pill" data-msg="I'm feeling angry 😡">Angry</button>
+            <button class="mood-pill" data-msg="I'm exhausted and drained 😴">Tired</button>
+            <button class="mood-pill" data-msg="I'm feeling lonely 💙">Lonely</button>
+          </div>
         </div>
-      </div>
 
-      <!-- Quick prompts -->
-      <div class="quick-prompts">
-        <p class="mood-label">Quick starters</p>
-        <button class="prompt-chip" data-prompt="I've been feeling stressed at work lately.">Work stress</button>
-        <button class="prompt-chip" data-prompt="I feel lonely and disconnected from people.">Loneliness</button>
-        <button class="prompt-chip" data-prompt="My anxiety has been really bad today.">Anxiety</button>
-        <button class="prompt-chip" data-prompt="I just need someone to talk to right now.">Just talk</button>
-      </div>
-
-      <!-- Crisis Banner -->
-      <div class="crisis-banner">
-        <span>🆘</span>
-        <div>
-          <strong>In crisis?</strong>
-          <p>iCall: <a href="tel:9152987821">9152987821</a><br>Vandrevala: <a href="tel:18602662345">1860-2662-345</a></p>
+        <div class="crisis-block">
+          <p class="crisis-label">Need immediate help?</p>
+          <p class="crisis-line">iCall <span>9152987821</span></p>
+          <p class="crisis-line">Vandrevala <span>1860-2662-345</span></p>
         </div>
       </div>
     </aside>
 
-    <!-- CHAT PANEL -->
-    <section class="chat-panel">
+    <!-- CHAT -->
+    <main class="chat-main">
       <header class="chat-header">
-        <div class="chat-avatar">🌿</div>
-        <div>
-          <h2 class="chat-title">Your Safe Space</h2>
-          <p class="chat-status"><span class="status-dot"></span> Always here for you</p>
+        <button class="menu-btn" id="menuBtn">
+          <span></span><span></span><span></span>
+        </button>
+        <div class="header-center">
+          <span class="header-title">MindEase</span>
+          <span class="header-status" id="headerStatus">
+            <span class="status-dot"></span> Ready
+          </span>
         </div>
-        <button class="clear-btn" id="clearBtn" title="Clear chat">↺ Reset</button>
+        <button class="clear-btn" id="clearBtn" title="New conversation">↺</button>
       </header>
 
-      <!-- Messages -->
-      <div class="messages-wrap" id="messagesWrap">
-        <!-- Welcome message injected by JS -->
+      <div class="messages" id="messages">
+        <div class="welcome">
+          <div class="welcome-icon">🌿</div>
+          <h2>Hello, I'm MindEase</h2>
+          <p>A safe space to share what's on your mind. I'm here to listen.</p>
+        </div>
       </div>
 
-      <!-- Sentiment badge -->
-      <div class="sentiment-bar" id="sentimentBar" style="display:none;">
-        <span id="sentimentLabel">Detected: —</span>
+      <!-- Sentiment bar -->
+      <div class="sentiment-strip" id="sentimentStrip" style="display:none">
+        <span class="sentiment-label" id="sentimentLabel"></span>
+        <span class="sentiment-overall" id="sentimentOverall"></span>
       </div>
 
-      <!-- Input area -->
-      <footer class="input-area">
-        <div class="emoji-row">
-          <button class="emoji-btn" data-emoji="😊">😊</button>
-          <button class="emoji-btn" data-emoji="😢">😢</button>
-          <button class="emoji-btn" data-emoji="😡">😡</button>
-          <button class="emoji-btn" data-emoji="❤️">❤️</button>
-          <span class="emoji-hint">tap to express</span>
+      <footer class="input-footer">
+        <div class="emoji-strip">
+          <button class="emoji-pill" data-e="😊">😊</button>
+          <button class="emoji-pill" data-e="😢">😢</button>
+          <button class="emoji-pill" data-e="😡">😡</button>
+          <button class="emoji-pill" data-e="❤️">❤️</button>
         </div>
         <div class="input-row">
-          <textarea
-            id="userInput"
-            class="msg-input"
-            placeholder="Share what's on your mind…"
-            rows="1"
-            maxlength="500"
-          ></textarea>
+          <textarea id="userInput" class="input-box" placeholder="Share what's on your mind…" rows="1" maxlength="1000"></textarea>
           <button class="send-btn" id="sendBtn">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-              <line x1="22" y1="2" x2="11" y2="13"/>
-              <polygon points="22 2 15 22 11 13 2 9 22 2"/>
-            </svg>
+            <svg viewBox="0 0 20 20" fill="currentColor"><path d="M3.105 3.105a.75.75 0 0 1 .958-.097l13.5 8.25a.75.75 0 0 1 0 1.284l-13.5 8.25a.75.75 0 0 1-1.105-.66V3.868a.75.75 0 0 1 .147-.763z"/></svg>
           </button>
         </div>
       </footer>
-    </section>
-
-  </main>
+    </main>
+  </div>
 
   <script src="/static/app.js"></script>
 </body>
