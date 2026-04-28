@@ -67,9 +67,14 @@ init_csv()
 # ── GEMINI CALL ───────────────────────────────
 def call_gemini(history: list) -> str:
     """Send conversation history to Gemini and return response text."""
+    # Prepend system prompt as first user/model exchange for v1 compatibility
+    full_history = [
+        {"role": "user",  "parts": [{"text": SYSTEM_PROMPT}]},
+        {"role": "model", "parts": [{"text": "Understood. I'm MindEase, a warm and empathetic mental health companion. I'm ready to listen and support."}]},
+    ] + history
+
     payload = {
-        "system_instruction": {"parts": [{"text": SYSTEM_PROMPT}]},
-        "contents": history,
+        "contents": full_history,
         "generationConfig": {
             "temperature": 0.85,
             "maxOutputTokens": 300,
@@ -78,10 +83,10 @@ def call_gemini(history: list) -> str:
     try:
         resp = requests.post(GEMINI_URL, json=payload, timeout=15)
         data = resp.json()
-        print("GEMINI RESPONSE:", data)  # logs to Render
+        print("GEMINI RESPONSE:", data)
         return data["candidates"][0]["content"]["parts"][0]["text"].strip()
     except Exception as e:
-        print("GEMINI ERROR:", str(e), resp.text if 'resp' in dir() else "no response")
+        print("GEMINI ERROR:", str(e), resp.text if 'resp' in locals() else "no response")
         return "I'm having a little trouble connecting right now. Please try again in a moment. 💙"
 
 # ── SESSION HISTORY ───────────────────────────
