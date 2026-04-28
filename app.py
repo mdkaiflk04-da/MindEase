@@ -12,10 +12,10 @@ app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "mindease-secret-2024")
 
 # ── CONFIG ────────────────────────────────────
-GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "")
+GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "AIzaSyBN0UcMl3ji1waUAQ-7W9hZjT_Cog5gbLg")
 GEMINI_URL = (
     "https://generativelanguage.googleapis.com/v1beta/models/"
-    "gemini-2.0-flash:generateContent?key=" + GEMINI_API_KEY
+    "gemini-1.5-flash:generateContent?key=" + GEMINI_API_KEY
 )
 
 LOG_FILE = "chat_log.csv"
@@ -78,8 +78,10 @@ def call_gemini(history: list) -> str:
     try:
         resp = requests.post(GEMINI_URL, json=payload, timeout=15)
         data = resp.json()
+        print("GEMINI RESPONSE:", data)  # logs to Render
         return data["candidates"][0]["content"]["parts"][0]["text"].strip()
     except Exception as e:
+        print("GEMINI ERROR:", str(e), resp.text if 'resp' in dir() else "no response")
         return "I'm having a little trouble connecting right now. Please try again in a moment. 💙"
 
 # ── SESSION HISTORY ───────────────────────────
