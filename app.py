@@ -51,7 +51,7 @@ def call_gemini(history):
         print("ERROR: GEMINI_API_KEY not set!")
         return "API key not configured. Please set GEMINI_API_KEY in environment variables."
 
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={api_key}"
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-lite:generateContent?key={api_key}"
 
     # Build contents with system prompt embedded as first turn
     contents = [
