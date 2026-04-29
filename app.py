@@ -1,6 +1,5 @@
 """
 app.py - Flask app with Gemini AI integration
-Routes: / (chat), /dashboard, /chat (POST), /clear (POST)
 """
 
 from flask import Flask, render_template, request, jsonify, session
@@ -11,39 +10,22 @@ from collections import Counter
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "mindease-secret-2024")
 
-# ── CONFIG ────────────────────────────────────
-GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "AIzaSyBN0UcMl3ji1waUAQ-7W9hZjT_Cog5gbLg")
-GEMINI_URL = (
-    "https://generativelanguage.googleapis.com/v1/models/"
-    "gemini-1.5-flash:generateContent?key=" + GEMINI_API_KEY
-)
-
 LOG_FILE = "chat_log.csv"
 
 SYSTEM_PROMPT = """You are MindEase, a warm, empathetic AI mental health companion.
-
-Your role:
 - Listen deeply and respond with genuine empathy and care
-- Ask thoughtful follow-up questions to understand the person better
-- Offer supportive, non-judgmental responses
+- Ask thoughtful follow-up questions
 - Use gentle, human language — never clinical or robotic
-- Keep responses concise (2-4 sentences usually) unless more depth is needed
-- Use emojis sparingly and only when they feel natural
+- Keep responses concise (2-4 sentences) unless more depth is needed
+- Use emojis sparingly and only when natural
 - Remember context from earlier in the conversation
+If someone expresses crisis or suicidal thoughts:
+- Respond with immediate warmth
+- Encourage reaching out to trusted people or professionals
+- Share: iCall India: 9152987821, Vandrevala Foundation: 1860-2662-345
+Never give medical diagnoses or pretend to be a licensed therapist."""
 
-If someone expresses crisis, suicidal thoughts, or severe distress:
-- Respond with immediate warmth and care
-- Gently encourage them to reach out to a trusted person or professional
-- Share crisis resources: iCall India: 9152987821, Vandrevala Foundation: 1860-2662-345
-- Never dismiss or minimize their feelings
-
-Never:
-- Give medical diagnoses
-- Pretend to be a licensed therapist
-- Use generic, copy-paste responses
-- Be preachy or lecture the person"""
-
-# ── CSV SETUP ─────────────────────────────────
+# ── CSV ───────────────────────────────────────
 def init_csv():
     try:
         if not os.path.exists(LOG_FILE):
@@ -52,49 +34,60 @@ def init_csv():
     except Exception:
         pass
 
-def log_message(message: str, sentiment: str):
+def log_message(message, sentiment):
     try:
         with open(LOG_FILE, "a", newline="", encoding="utf-8") as f:
-            csv.writer(f).writerow([
-                message, sentiment,
-                datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            ])
+            csv.writer(f).writerow([message, sentiment,
+                datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")])
     except Exception:
         pass
 
 init_csv()
 
-# ── GEMINI CALL ───────────────────────────────
-def call_gemini(history: list) -> str:
-    """Send conversation history to Gemini and return response text."""
-    # Prepend system prompt as first user/model exchange for v1 compatibility
-    full_history = [
+# ── GEMINI ────────────────────────────────────
+def call_gemini(history):
+    api_key = os.environ.get("GEMINI_API_KEY", "")
+    if not api_key:
+        print("ERROR: GEMINI_API_KEY not set!")
+        return "API key not configured. Please set GEMINI_API_KEY in environment variables."
+
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key={api_key}"
+
+    # Build contents with system prompt embedded as first turn
+    contents = [
         {"role": "user",  "parts": [{"text": SYSTEM_PROMPT}]},
-        {"role": "model", "parts": [{"text": "Understood. I'm MindEase, a warm and empathetic mental health companion. I'm ready to listen and support."}]},
+        {"role": "model", "parts": [{"text": "Understood. I am MindEase, ready to listen and support you with warmth and empathy."}]},
     ] + history
 
     payload = {
-        "contents": full_history,
+        "contents": contents,
         "generationConfig": {
             "temperature": 0.85,
-            "maxOutputTokens": 300,
+            "maxOutputTokens": 350,
         }
     }
-    try:
-        resp = requests.post(GEMINI_URL, json=payload, timeout=15)
-        data = resp.json()
-        print("GEMINI RESPONSE:", data)
-        return data["candidates"][0]["content"]["parts"][0]["text"].strip()
-    except Exception as e:
-        print("GEMINI ERROR:", str(e), resp.text if 'resp' in locals() else "no response")
-        return "I'm having a little trouble connecting right now. Please try again in a moment. 💙"
 
-# ── SESSION HISTORY ───────────────────────────
+    try:
+        resp = requests.post(url, json=payload, timeout=20)
+        data = resp.json()
+        print("GEMINI STATUS:", resp.status_code)
+        if "candidates" in data:
+            return data["candidates"][0]["content"]["parts"][0]["text"].strip()
+        else:
+            print("GEMINI ERROR BODY:", json.dumps(data))
+            return "I'm having a moment of difficulty. Please try again shortly. 💙"
+    except requests.exceptions.Timeout:
+        print("GEMINI TIMEOUT")
+        return "The response took too long. Please try again. 💙"
+    except Exception as e:
+        print("GEMINI EXCEPTION:", str(e))
+        return "Something went wrong. Please try again. 💙"
+
+# ── SESSION ───────────────────────────────────
 def get_history():
     return session.get("history", [])
 
 def save_history(history):
-    # Keep last 20 turns to stay within token limits
     session["history"] = history[-40:]
 
 # ── ROUTES ────────────────────────────────────
@@ -113,21 +106,13 @@ def chat():
     user_message = data["message"].strip()
     history = get_history()
 
-    # Add user message to history
     history.append({"role": "user", "parts": [{"text": user_message}]})
-
-    # Get Gemini response
     bot_response = call_gemini(history)
-
-    # Add bot response to history
     history.append({"role": "model", "parts": [{"text": bot_response}]})
     save_history(history)
 
-    # Analyze sentiment across full conversation
-    overall_sentiment = analyze_conversation_sentiment(history)
     msg_sentiment     = analyze_sentiment(user_message)
-
-    # Log to CSV
+    overall_sentiment = analyze_conversation_sentiment(history)
     log_message(user_message, msg_sentiment)
 
     return jsonify({
