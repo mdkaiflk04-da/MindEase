@@ -165,3 +165,15 @@ def dashboard():
 
 if __name__ == "__main__":
     app.run(debug=False, port=5000)
+
+@app.route("/models")
+def list_models():
+    api_key = os.environ.get("GEMINI_API_KEY", "")
+    url = f"https://generativelanguage.googleapis.com/v1beta/models?key={api_key}"
+    try:
+        resp = requests.get(url, timeout=10)
+        data = resp.json()
+        models = [m["name"] for m in data.get("models", [])]
+        return jsonify({"models": models, "status": resp.status_code})
+    except Exception as e:
+        return jsonify({"error": str(e)})
