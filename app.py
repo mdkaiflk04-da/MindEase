@@ -1,5 +1,5 @@
 """
-app.py - Flask app with Gemini AI integration
+app.py - Flask app with Groq AI integration
 """
 
 from flask import Flask, render_template, request, jsonify, session
@@ -44,43 +44,48 @@ def log_message(message, sentiment):
 
 init_csv()
 
-# ── GEMINI ────────────────────────────────────
-def call_gemini(history):
-    api_key = os.environ.get("GEMINI_API_KEY", "")
+# ── GROQ AI ───────────────────────────────────
+def call_groq(history):
+    api_key = os.environ.get("GROQ_API_KEY", "")
     if not api_key:
-        print("ERROR: GEMINI_API_KEY not set!")
-        return "API key not configured. Please set GEMINI_API_KEY in environment variables."
+        print("ERROR: GROQ_API_KEY not set!")
+        return "API key not configured. Please set GROQ_API_KEY in environment variables."
 
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={api_key}"
+    url = "https://api.groq.com/openai/v1/chat/completions"
 
-    # Build contents with system prompt embedded as first turn
-    contents = [
-        {"role": "user",  "parts": [{"text": SYSTEM_PROMPT}]},
-        {"role": "model", "parts": [{"text": "Understood. I am MindEase, ready to listen and support you with warmth and empathy."}]},
-    ] + history
+    # Convert history format to OpenAI-style messages
+    messages = [{"role": "system", "content": SYSTEM_PROMPT}]
+    for msg in history:
+        role = "user" if msg["role"] == "user" else "assistant"
+        text = msg["parts"][0]["text"] if "parts" in msg else msg.get("content", "")
+        messages.append({"role": role, "content": text})
 
     payload = {
-        "contents": contents,
-        "generationConfig": {
-            "temperature": 0.85,
-            "maxOutputTokens": 350,
-        }
+        "model": "llama-3.3-70b-versatile",
+        "messages": messages,
+        "temperature": 0.85,
+        "max_tokens": 350,
+    }
+
+    headers = {
+        "Authorization": f"Bearer {api_key}",
+        "Content-Type": "application/json",
     }
 
     try:
-        resp = requests.post(url, json=payload, timeout=20)
+        resp = requests.post(url, json=payload, headers=headers, timeout=20)
         data = resp.json()
-        print("GEMINI STATUS:", resp.status_code)
-        if "candidates" in data:
-            return data["candidates"][0]["content"]["parts"][0]["text"].strip()
+        print("GROQ STATUS:", resp.status_code)
+        if resp.status_code == 200:
+            return data["choices"][0]["message"]["content"].strip()
         else:
-            print("GEMINI ERROR BODY:", json.dumps(data))
+            print("GROQ ERROR:", json.dumps(data))
             return "I'm having a moment of difficulty. Please try again shortly. 💙"
     except requests.exceptions.Timeout:
-        print("GEMINI TIMEOUT")
+        print("GROQ TIMEOUT")
         return "The response took too long. Please try again. 💙"
     except Exception as e:
-        print("GEMINI EXCEPTION:", str(e))
+        print("GROQ EXCEPTION:", str(e))
         return "Something went wrong. Please try again. 💙"
 
 # ── SESSION ───────────────────────────────────
@@ -107,7 +112,7 @@ def chat():
     history = get_history()
 
     history.append({"role": "user", "parts": [{"text": user_message}]})
-    bot_response = call_gemini(history)
+    bot_response = call_groq(history)
     history.append({"role": "model", "parts": [{"text": bot_response}]})
     save_history(history)
 
@@ -165,15 +170,3 @@ def dashboard():
 
 if __name__ == "__main__":
     app.run(debug=False, port=5000)
-
-@app.route("/models")
-def list_models():
-    api_key = os.environ.get("GEMINI_API_KEY", "")
-    url = f"https://generativelanguage.googleapis.com/v1beta/models?key={api_key}"
-    try:
-        resp = requests.get(url, timeout=10)
-        data = resp.json()
-        models = [m["name"] for m in data.get("models", [])]
-        return jsonify({"models": models, "status": resp.status_code})
-    except Exception as e:
-        return jsonify({"error": str(e)})
